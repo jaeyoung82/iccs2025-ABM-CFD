@@ -1,0 +1,467 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<simulator version="2.0.0" simulationName="Kindergarten">
+	
+	<!-- The simulation runs 15 minutes = 900 seconds, and has 900/0.05 = 18000 steps of length 0.05 second (ie. 20 frames per second). -->
+	<timeState simulationEndTime="900.0" timeStepDuration="0.05"/> 
+	
+	<!-- The parallelization is done based on 6 threads. -->
+	<threadingState threads="6"/>
+	
+	<!-- We log to the console on debug level. -->
+	<logging>
+		<loggingState type="Console" level="Debug"/>
+	</logging>
+	
+    <loop updateType="Permutation" accuracyDigits="3">
+		<loopVariable name="LOOP" start="1.01" change="0.01" steps="29"/> <!-- num of simulation runs = steps + 1 -->
+	</loop>
+
+	<layouts>
+		<!-- TODO Warning: update path -->
+		<scenario id="0" layoutLink="C:\Users\Asus\Documents\MyRepo\FYP-infection-model\Experiments\traj_input\Layout.xml"/>
+	</layouts>
+	
+	<lattices>
+		<!-- Used by the perception model -->
+		<lattice id="0" scenarioId="0" latticeType="Quadratic" cellEdgeSize="0.05"/>
+	</lattices>
+	
+	<!-- A routing graph is generated for the routing model=4 -->
+	<graphs>
+		<graphModel name="routing" id="0">
+			<graphOperation id="0" name="raw" type="RawGraph" order="0">
+				<property name="graphId" type="Integer" value="0"/>
+			</graphOperation>
+			<!-- Creates a vertex in the center of each origin, destination and intermediate area -->
+			<graphOperation id="1" name="seeds" type="VertexCreateSeedBased" />
+			<!-- Creates vertices at the edges of obstacles -->
+			<!-- parameter cornerDistance: new vertices are created at geometry corners in a distance of cornerDistance -->
+			<graphOperation id="2" name="corners" type="VertexCreateAtCorners"> 
+				<property name="cornerDistance" type="Double" value="0.96"/> 
+			</graphOperation>
+			<graphOperation id="3" name="portal" type="VertexCreatePortal"> 
+				<property name="cellSize" type="Double" value="0.23"/>
+			</graphOperation>
+			<graphOperation id="4" name="minimalRegion" type="VertexCreateMinimalRegion">
+				<property name="cellSize" type="Double" value="0.23"/>
+			</graphOperation>
+			<!-- Removes vertices based on their distance to each other -->
+			<!-- parameter mergeDistance: vertices with a distance less than mergeDistance will be merged -->
+			<graphOperation id="5" name="remove" type="VertexRemoveSimple">
+				<property name="mergeDistance" type="Double" value="0.23"/>
+			</graphOperation> 
+            <!-- Adds edges between all vertices of the graph which are visible to each other -->
+			<!-- property alpha: new edges are generated only if they lie in an angle of more than alpha towards the other edges outgoing from the vertex -->
+			<graphOperation id="6" name="visibility" type="EdgeCreateVisibilityAngleBased">
+				<property name="alpha" type="Double" value="12"/>
+				<property name="visibilityTolerance" type="Double" value="0.23"/>
+			</graphOperation>
+			<!-- Removes all edges and vertices which are not reachable from the specified known seeds -->
+            <graphOperation id="7" name="removeDispensible" type="EdgeRemoveUnreachable"/>
+			<graphOperation id="8" name="removeLong" type="EdgeRemoveMeanDistance"/>
+			<graphOperation id="9" name="toConfiguration" type="ToConfiguration">
+				<property name="scenarioId" type="Integer" value="0"/>
+			</graphOperation>
+		</graphModel> 
+	</graphs>
+	
+	<!-- Execution order concept is only in use if demanded by the user. Thus, it is optional! -->
+	<!-- If not added, the classical operational/tactical/strategic behavior concept is active -->
+	<!-- and the user has to provide all basic models (walking, wayfinding ...) -->
+	<!-- If blocks exists the user need to provide the corresponding models as given by model a (unique) id -->
+	<!-- The execution order tag comprises at least a single block. -->
+	<executionOrder>
+		
+		<!-- Blocks are in order and processed based on the given sequence. -->
+		<!-- Blocks have a multiplicator, which indicates in which multiple of the -->
+		<!-- time-step the block should be executed. 2 means run the block in every second time-step. -->
+		<!-- A block comprises at least one model-->
+
+        <executionBlock id="1" multiplicator="1">
+			<executionModel id="1" modelType="operational" multiplicator="1"/>
+			<executionModel id="4" modelType="tactical" multiplicator="1"/>
+			<executionModel id="9" modelType="strategic" multiplicator="1"/>
+		</executionBlock>
+
+		<executionBlock id="2" multiplicator="1">
+			<!-- <executionModel id="40" modelType="tactical" multiplicator="1"/> -->
+			<executionModel id="10" modelType="operational" multiplicator="1"/>
+			<!-- <executionModel id="91" modelType="strategic" multiplicator="1"/> -->
+			<!-- <executionModel id="999" modelType="meta" multiplicator="1"/> -->
+		</executionBlock>
+		
+		<!-- Multiple more executionBlock can be added. -->
+		<!-- The order of the blocks is important for the execution sequence! -->
+		
+	</executionOrder>
+
+	
+	<perceptualModels>
+    <!-- Perception models provide a pathway to reduce the amount of information that agents can perceive. -->
+
+	<!-- Warning: make sure that the lattice cellEdgeSize is rather small (0.1m) to avoid artificial "not visible" situations -->
+	
+	<!-- The Bresenham perception model uses  bresenham-lines to check if an objects is visible. -->
+	<!-- If something is not visible it is visually blocked by obstacles. -->
+		<perceptual id="0" name="Bresenham" type="Bresenham">
+			<!-- The latticeId property stores the id of a lattice in the lattice models and defines the accuracy of the model -->
+			<property name="latticeId" type="Integer" value="0"/>
+            <!-- The perception distance is an optional parameter. -->
+            <!-- It defines the maximal distance an agent can perceive something. -->
+            <!-- In case the perception distance is missing, it model will use "longest graph edge * 2" as distance. -->
+            <property name="perceptionDistance" type="Double" value="50.0"/>
+		</perceptual> 
+	</perceptualModels>
+	
+	<!-- A single operational model, because we apply the "classical" simulation approach. -->
+	<operationalModels>
+		<operational id="1" name="operational" perceptualModel="0">
+			<walkingReference modelId="2"/>
+			<standingReference modelId="3"/>
+		</operational>
+		<operational id="10" name="operational" perceptualModel="0">
+			<walkingReference modelId="2"/>
+			<standingReference modelId="30"/>
+		</operational>
+	</operationalModels>
+	
+	<walkingModels>
+        <walking id="2" name="socialForceModel" type="SocialForce">
+			<property name="relaxation_time" type="Double" value="0.5"/>
+			<property name="physical_interaction_kappa" type="Double" value="1.4e5"/>
+			<property name="physical_interaction_k" type="Double" value="0.2e5"/>
+			<property name="panic_degree" type="Double" value="0.0"/>
+			<property name="mass_behaviour_A" type="Double" value="20"/> <!--29.0-->
+			<property name="mass_behaviour_B" type="Double" value="0.04"/> <!--0.07-->
+		</walking>
+	</walkingModels>
+	
+	<standingModels>
+		<standing id="3" name="JohannsonStanding" type="JohannsonStanding">
+			<property name="relaxation_time" type="Double" value="0.5" />
+			<property name="physical_interaction_kappa" type="Double" value="1.4e5" />
+			<property name="physical_interaction_k" type="Double" value="0.2e5" />
+			<property name="mass_behaviour_A" type="Double" value="29.0"/>
+			<!-- mass_behaviour_B: interpersonal distance scaling -->
+            <property name="mass_behaviour_B" type="Double" value="0.07"/>	
+			<property name="waiting_case" type="Integer" value="1" />
+			<property name="massWaitingPoint" type="Double" value="1.0" />
+		</standing> 
+
+        <standing id="30" name="fixedStanding" type="FixedStanding" />
+	</standingModels>
+	
+	<tacticalModels>
+		<tactical id="4" name="tactical" perceptualModel="0">
+			<routingReference modelId="5"/>
+			<stayingReference modelId="6"/>
+			<queuingReference modelId="7"/>
+			<searchingReference modelId="8"/>
+            <!-- The goalDistanceRadius provides the distance at which tactical models see locations as reached. -->
+            <!-- This is distance between the center of a pedestrian and the final goal position (where to stop). -->
+			<property name="goalDistanceRadius" type="Double" value="0.23" /> <!--0.23-->
+
+            <!-- The navigationDistanceRadius models the distance and the parameter for reaching navigations nodes. -->
+            <!-- The nodes are typically graph nodes of a routing graph. If there is no previous node the distance is the radius for the reaching the node. -->
+			<property name="navigationDistanceRadius" type="Double" value="0.66" />
+
+            <!-- The tacticalControl is mostly set to True and activates "smart" behavior. -->
+            <!-- This smart behavior includes to start routing if walking goals of e.g. queuing models are not visible. -->
+            <!-- Hence, the tacticalControl helps to reduce nonsense behavior like being "stuck". -->
+            <!-- However, do set this to false in case pedestrian should strictly follow a routing path. -->
+            <!-- Smart behavior leads to taking short-cuts and perception based re-routing. -->
+            <!-- Having the tactical control set to true is mandatory for using deep node selection. -->
+			<property name="tacticalControl" type="Boolean" value="True" />
+
+			<property name="deepNodeSelection" type="Boolean" value="True"/> <!-- only if tacticalControl "True" -->
+			<property name="routeMemory" type="Boolean" value="False" />
+        </tactical>
+	</tacticalModels>
+
+	<!-- A single routing model. Select one of the following for testing. -->
+	<routingModels>
+		<routing id="5" name="Dijkstra" type="Dijkstra"/>
+	</routingModels>
+	
+	<!-- A single staying model. -->
+	<stayingModels>
+		<staying id="6" name="shiftedRandomParticipating" type="ShiftedRandomParticipating">
+			<property name="participateDistance" type="Double" value="2.0"/> <!--2.0-->
+            <!-- The number of trials for finding a position that does not collide and so on  -->
+			<property name="numberOfGambles" type="Integer" value="60"/>
+            <!-- distance between pedestrian boundaries -->
+			<property name="safetyDistance" type="Double" value="0.05"/> <!--0.1--> 
+			<property name="groupPositionRadius" type="Double" value="2.0"/> <!--2.0-->
+		</staying>
+        <!-- <staying id='6' name="NoStaying" type="NoStaying" /> -->
+	</stayingModels>
+	
+	<!-- A single queueing model. -->
+	<queuingModels>
+		<queuing id="7" name="angularQueuing" type="AngularQueueing" >
+			<property name="proximityDistance" type="Double" value="1.5"/> <!--1.5-->
+            <!-- distance between pedestrian boundaries -->
+			<property name="safetyDistance" type="Double" value="0.1"/> <!--0.1-->
+            <!-- Angle in degree for finding a position behind the current queue tail, 90 -->
+			<property name="queueArc" type="Double" value="30"/>
+            <!-- Distance in meter for finding a position behind the current queue tail, 1 -->
+			<property name="queueDistance" type="Double" value="0.71"/> <!--0.71-->
+			<property name="queuingLag" type="Double" value="1.5"/> <!--1.5-->
+			<complexProperty name="closeToSelf" type="List" valueType="String">
+				<entry index="0" value="NaturalQueue"/>
+			</complexProperty>
+		</queuing>
+`
+	</queuingModels>
+
+	<!-- A single searching model. This is a dummy model, which provides no real searching behavior!. -->
+	<searchingModels>
+		<searching id="8" name="noSearching" type="NoSearching"/>
+	</searchingModels>
+	
+	<!-- A single destination choice (strategic model) model. -->
+	<strategicalModels>
+		<strategical id="9" name="odMatrx" type="ODMatrix" perceptualModel="0">
+			<complexProperty name="originDestination" type="CsvMatrix" valueType="Double">
+				<entry file="C:\Users\Asus\Documents\MyRepo\FYP-infection-model\Experiments\traj_input\ODMatrix_Expt1.csv" separator=";"/>
+			</complexProperty>
+            <!-- "staying" by default -->
+			<complexProperty name="behaviorType" type="List" valueType="String">
+                <entry index="1" value="Queuing"/>
+
+				<entry index="10" value="Staying"/>
+				<entry index="11" value="Staying"/>
+				<entry index="12" value="Staying"/>
+				<entry index="13" value="Staying"/>
+
+				<entry index="14" value="Staying"/>
+				<entry index="15" value="Staying"/>
+				<entry index="16" value="Staying"/>
+				<entry index="17" value="Staying"/>
+
+				<entry index="20" value="Staying"/>
+				<entry index="21" value="Staying"/>
+				<entry index="22" value="Staying"/>
+				<entry index="23" value="Staying"/>
+				<entry index="24" value="Staying"/>
+				<entry index="25" value="Staying"/>
+				<entry index="26" value="Staying"/>
+				<entry index="27" value="Staying"/>
+				<entry index="28" value="Staying"/>
+
+                <entry index="30" value="Staying"/>
+				<entry index="31" value="Staying"/>
+				<entry index="32" value="Staying"/>
+				<entry index="33" value="Staying"/>
+
+				<entry index="131" value="Staying"/>
+				<entry index="132" value="Staying"/>
+				<entry index="133" value="Staying"/>
+				<entry index="134" value="Staying"/>
+				<entry index="135" value="Staying"/>
+				<entry index="136" value="Staying"/>
+				<entry index="137" value="Staying"/>
+				<entry index="138" value="Staying"/>
+				<entry index="139" value="Staying"/>
+				<entry index="140" value="Staying"/>
+				<entry index="141" value="Staying"/>
+				<entry index="142" value="Staying"/>
+				<entry index="143" value="Staying"/>
+				<entry index="144" value="Staying"/>
+				<entry index="145" value="Staying"/>
+				<entry index="146" value="Staying"/>
+				<entry index="147" value="Staying"/>
+				<entry index="148" value="Staying"/>
+				<entry index="149" value="Staying"/>
+				<entry index="150" value="Staying"/>
+				<entry index="151" value="Staying"/>
+				<entry index="152" value="Staying"/>
+				<entry index="153" value="Staying"/>
+				<entry index="154" value="Staying"/>
+				<entry index="155" value="Staying"/>
+				<entry index="156" value="Staying"/>
+				<entry index="157" value="Staying"/>
+				<entry index="158" value="Staying"/>
+				<entry index="159" value="Staying"/>
+				<entry index="160" value="Staying"/>
+			</complexProperty>
+            
+            <!-- The fulfilmentDuration complex property exchanged with a probability based service time defintion. -->
+            <!-- The  serviceTimeDistribution is a CsvMatrix that holds a discrete distribution -->
+            <complexProperty name="serviceTimeDistribution" type="CsvMatrix" valueType="Double">
+		        <entry file="C:\Users\Asus\Documents\MyRepo\FYP-infection-model\Experiments\traj_input\serviceTimeDistributions.csv" separator=";"/>
+            </complexProperty>
+            <!-- <property name="fulfilmentOverallDuration" type="Double" value="20.0"/> -->
+		</strategical>
+	</strategicalModels>
+	
+	<!-- A seed concept for the generator, provides basic pedestrian data -->
+	<pedestrianSeeds>
+		<!-- The seed is used in the orign=0 -->
+		<pedestrianSeed id="0" name="basic" type="NoDistribution">
+			<property name="desiredVelocity" type="Double" value="1.34"/> <!--meter / second-->
+			<property name="maximalVelocity" type="Double" value="2.7"/> <!--meter / second-->
+			<property name="radiusMeter" type="Double" value="0.18"/> <!--0.23-->
+			<property name="groupSize" type="Integer" value="1"/>
+		</pedestrianSeed>
+	</pedestrianSeeds>
+	
+	<!-- A single generator -->
+	<generators> 
+
+	    <!-- Create 4 generators (2 stock, 2 multiple stock) for 4 sides of the table -->
+
+        <generator id="0" name="generatorTableLeft" type="Stock" scenario="0" origin="101" seed="0">
+            <property name="startTime" type="Double" value="0"/> <!-- Start at second 0 -->
+            <property name="endTime" type="Double" value="900.0"/> <!-- End at second 300 -->
+            <property name="basicHeading" type="Double" value="0.0"/> <!-- Pedestrian looks "right" -->
+            <property name="maximalPedestrians" type="Integer" value="1"/> <!-- 100 Pedestrians to generate -->
+            <property name="safetyDistance" type="Double" value="0.05"/>  <!-- 0.25 meter spawn distance -->
+            <geometry geometryType="Point"/>
+            <complexProperty name="timePoint" type="List" valueType="Double"> 
+                <entry index="0" value="0.0"/> <!-- first time to generated pedestrians -->
+            </complexProperty>
+            <complexProperty name="stock" type="List" valueType="Integer">
+                <entry index="0" value="1"/> <!-- number of pedestrians to generate in the index = 0 time-point -->
+            </complexProperty>
+        </generator>
+
+	    <generator id="1" name="generatorTableDownMultiple" scenario="0" seed="0" type="Multiple">
+			<property name="subType" type="String" value="Stock"/>
+			<complexProperty name="origins" type="List" valueType="Integer">
+				<entry index="0" value="102"/>
+				<entry index="1" value="103"/>
+				<entry index="2" value="104"/>
+				<entry index="3" value="105"/>
+				<entry index="4" value="106"/>
+				<entry index="5" value="107"/>
+				<entry index="6" value="108"/>
+				<entry index="7" value="109"/>
+				<entry index="8" value="110"/>
+				<entry index="9" value="111"/>
+				<entry index="10" value="112"/>
+				<entry index="11" value="113"/>
+				<entry index="12" value="114"/>
+				<entry index="13" value="115"/>
+			</complexProperty>
+            <property name="startTime" type="Double" value="0"/> <!-- Start at second 0 -->
+            <property name="endTime" type="Double" value="900.0"/> <!-- End at second 300 -->
+            <property name="basicHeading" type="Double" value="90.0"/> <!-- Pedestrian looks "up" -->
+            <property name="maximalPedestrians" type="Integer" value="1"/> <!-- 100 Pedestrians to generate -->
+            <property name="safetyDistance" type="Double" value="0.05"/>  <!-- 0.25 meter spawn distance -->
+            <geometry geometryType="Point"/>
+            <complexProperty name="timePoint" type="List" valueType="Double"> 
+                <entry index="0" value="0.0"/> <!-- first time to generated pedestrians -->
+            </complexProperty>
+            <complexProperty name="stock" type="List" valueType="Integer">
+                <entry index="0" value="1"/> <!-- number of pedestrians to generate in the index = 0 time-point -->
+            </complexProperty>
+        </generator>
+
+        <generator id="2" name="generatorTableRight" type="Stock" scenario="0" origin="116" seed="0">
+            <property name="startTime" type="Double" value="0"/> <!-- Start at second 0 -->
+            <property name="endTime" type="Double" value="900.0"/> <!-- End at second 300 -->
+            <property name="basicHeading" type="Double" value="180.0"/> <!-- Pedestrian looks "left" -->
+            <property name="maximalPedestrians" type="Integer" value="1"/> <!-- 100 Pedestrians to generate -->
+            <property name="safetyDistance" type="Double" value="0.05"/>  <!-- 0.25 meter spawn distance -->
+            <geometry geometryType="Point"/>
+            <complexProperty name="timePoint" type="List" valueType="Double"> 
+                <entry index="0" value="0.0"/> <!-- first time to generated pedestrians -->
+            </complexProperty>
+            <complexProperty name="stock" type="List" valueType="Integer">
+                <entry index="0" value="1"/> <!-- number of pedestrians to generate in the index = 0 time-point -->
+            </complexProperty>
+        </generator>
+
+	    <generator id="3" name="generatorTableUpMultiple" scenario="0" seed="0" type="Multiple">
+			<property name="subType" type="String" value="Stock"/>
+			<complexProperty name="origins" type="List" valueType="Integer">
+				<entry index="0" value="117"/>
+				<entry index="1" value="118"/>
+				<entry index="2" value="119"/>
+				<entry index="3" value="120"/>
+				<entry index="4" value="121"/>
+				<entry index="5" value="122"/>
+				<entry index="6" value="123"/>
+				<entry index="7" value="124"/>
+				<entry index="8" value="125"/>
+				<entry index="9" value="126"/>
+				<entry index="10" value="127"/>
+				<entry index="11" value="128"/>
+				<entry index="12" value="129"/>
+				<entry index="13" value="130"/>
+			</complexProperty>
+            <property name="startTime" type="Double" value="0"/> <!-- Start at second 0 -->
+            <property name="endTime" type="Double" value="900.0"/> <!-- End at second 300 -->
+            <property name="basicHeading" type="Double" value="270.0"/> <!-- Pedestrian looks "down" -->
+            <property name="maximalPedestrians" type="Integer" value="1"/> <!-- 100 Pedestrians to generate -->
+            <property name="safetyDistance" type="Double" value="0.05"/>  <!-- 0.25 meter spawn distance -->
+            <geometry geometryType="Point"/>
+            
+            <complexProperty name="timePoint" type="List" valueType="Double"> 
+                <entry index="0" value="0.0"/> <!-- first time to generated pedestrians -->
+            </complexProperty>
+            <complexProperty name="stock" type="List" valueType="Integer">
+                <entry index="0" value="1"/> <!-- number of pedestrians to generate in the index = 0 time-point -->
+            </complexProperty>
+        </generator>
+	</generators>
+	
+	<!-- A single absorber -->
+	<absorbers>
+		<!-- The absorbers are used in the destinations -->
+		<absorber id="0" name="absorberTableLeft" scenario="0" destination="30" type="DestinationSelected">
+			<property name="vanishTime" type="Double" value="900.0 "/>
+		</absorber>
+		<absorber id="1" name="absorberTableDown" scenario="0" destination="31" type="DestinationSelected">
+			<property name="vanishTime" type="Double" value="900.0"/>
+		</absorber>
+		<absorber id="2" name="absorberTableRight" scenario="0" destination="32" type="DestinationSelected">
+			<property name="vanishTime" type="Double" value="900.0"/>
+		</absorber>
+		<absorber id="3" name="absorberTableUp" scenario="0" destination="33" type="DestinationSelected">
+			<property name="vanishTime" type="Double" value="900.0"/>
+		</absorber>
+	</absorbers>
+		
+	<!-- We print the pedestrian data, xt-density data, occupancy data, the number of leaving pedestrians and the configuration layout. -->
+	<outputWriters>
+		<outputWriter id="0" name="pedestrianOutputToFile"> 
+			<property name="call" type="Integer" value="4"/> <!-- "call=4" means write every 4 frames or 0.2s -->
+			<property name="buffer" type="Integer" value="4096"/>
+			<writerTarget targetType="File">
+				<property name="file" type="File" value="C:\Users\Asus\Documents\MyRepo\FYP-infection-model\Experiments\traj_output\Expt$LOOP$_pedestrian.csv"/>
+				<property name="index" type="Boolean" value="False"/> 
+			</writerTarget>
+			<writerFormat formatType="Csv">
+				<property name="index" type="Boolean" value="False"/> 
+				<property name="delimiter" type="String" value=";"/>
+			</writerFormat>
+			<writerSource sourceType="Pedestrian">
+				<property name="timeStep" type="Format" value="%d"/>
+				<property name="id" type="Format" value="%d"/>
+				<property name="x" type="Format" value="%.2f"/>
+				<property name="y" type="Format" value="%.2f"/>
+				<property name="xHeading" type="Format" value="%.2f"/>
+				<property name="yHeading" type="Format" value="%.2f"/>
+				<property name="targetID" type="Format" value="%d"/>
+				<property name="bodyRadius" type="Format" value="%.2f"/>
+				<property name="behavior" type="Format" value="%d"/>
+				<!-- <property name="seedID" type="Format" value="%d"/>
+				<property name="currentVertexID" type="Format" value="%d"/> -->
+			</writerSource>
+		</outputWriter>
+		
+		<outputWriter id="1" name="layoutWriter">
+			<property name="call" type="Integer" value="0"/> <!-- In pre-processing -->
+			<writerTarget targetType="File">
+				<property name="file" type="File" value="C:\Users\Asus\Documents\MyRepo\FYP-infection-model\Experiments\traj_output\Expt$LOOP$_layout.xml"/>
+			</writerTarget>
+			<writerFormat formatType="Single"/>
+			<writerSource sourceType="Configuration">
+				<property name="dataElement" type="String" value="layouts"/>
+			</writerSource>
+		</outputWriter>
+	</outputWriters>
+
+</simulator>

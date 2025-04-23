@@ -1,0 +1,39 @@
+##################################################################################################################################
+Expt 1: Emitter target = 'restroom'
+agents: [1, 14, 15, 17, 23, 29] | initial target: restroom
+agents: [11, 16, 20, 21, 26, 28] | initial target: subgroup_S
+agents: [3, 4, 12, 18, 27, 30] | initial target: subgroup_M
+agents: [6, 7, 8, 13, 19, 24] | initial target: subgroup_L
+agents: [2, 5, 9, 10, 22, 25] | initial target: table
+
+##################################################################################################################################
+Expt 2.1: Emitter target = 'subgroup_S'
+agents: [3, 15, 16, 21, 27, 28] | initial target: restroom
+agents: [1, 2, 9, 11, 20, 23] | initial target: subgroup_S
+agents: [7, 13, 14, 19, 22, 25] | initial target: subgroup_M
+agents: [4, 5, 17, 18, 24, 29] | initial target: subgroup_L
+agents: [6, 8, 10, 12, 26, 30] | initial target: table
+
+##################################################################################################################################
+Expt 2.2: Emitter target = 'subgroup_M'
+agents: [3, 15, 16, 21, 27, 28] | initial target: restroom
+agents: [7, 13, 14, 19, 22, 25] | initial target: subgroup_S
+agents: [1, 2, 9, 11, 20, 23] | initial target: subgroup_M
+agents: [4, 5, 17, 18, 24, 29] | initial target: subgroup_L
+agents: [6, 8, 10, 12, 26, 30] | initial target: table
+
+##################################################################################################################################
+Expt 2.3: Emitter target = 'subgroup_L'
+agents: [3, 15, 16, 21, 27, 28] | initial target: restroom
+agents: [4, 5, 17, 18, 24, 29] | initial target: subgroup_S
+agents: [7, 13, 14, 19, 22, 25] | initial target: subgroup_M
+agents: [1, 2, 9, 11, 20, 23] | initial target: subgroup_L
+agents: [6, 8, 10, 12, 26, 30] | initial target: table
+
+##################################################################################################################################
+Expt 5: Emitter target = 'table'
+agents: [6, 7, 13, 15, 21, 23] | initial target: restroom
+agents: [4, 17, 19, 20, 25, 30] | initial target: subgroup_S
+agents: [8, 11, 18, 26, 27, 28] | initial target: subgroup_M
+agents: [5, 9, 10, 14, 16, 29] | initial target: subgroup_L
+agents: [1, 2, 3, 12, 22, 24] | initial target: table
