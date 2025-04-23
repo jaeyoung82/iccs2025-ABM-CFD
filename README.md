@@ -4,6 +4,7 @@ This repository contains code for the research paper "Estimating airborne transm
 
 Authors: Boon Leng Ang, Jaeyoung Kwak, Chin Chun Ooi, Zhengwei Ge, Hongying Li, Michael Lees and Wentong Cai
 
+
 In this study, we developed a framework integrating agent-based modeling (ABM) and computational fluid dynamics (CFD) to evaluate the transmission risk systematically. The developed framework was applied to a preschool COVID-19 cluster in Singapore as a case study. 
 
 Our pedestrian movement model is implemented in MomenTUMv2 based on the concept of hierarchical behavior modeling which describes the pedestrian behavior in terms of three interconnected layers: the strategic layer, the tactical layer and the operational layer. MomenTUMv2 software can be found from https://github.com/tumcms/MomenTUM. 
